@@ -21,8 +21,6 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
 .section { margin-bottom: 20px; }
 .section-label { font-size: 11px; font-weight: 700; color: var(--text-sub); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
 .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-.api-input { width: 100%; font-size: 13px; font-family: inherit; padding: 9px 12px; border: 1px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); }
-.api-hint { font-size: 11px; color: var(--text-hint); margin-top: 6px; }
 .topic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .topic-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border-mid); border-radius: var(--radius-sm); background: var(--card); color: var(--text-sub); font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.15s; text-align: left; }
 .topic-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent-dark); font-weight: 500; }
@@ -41,6 +39,10 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
 .generate-btn:active { opacity: 0.85; }
 .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .progress-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: none; margin-top: 16px; }
+.progress-step { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13px; color: var(--text-hint); border-bottom: 1px solid var(--border); }
+.progress-step:last-child { border-bottom: none; }
+.progress-step.active { color: var(--accent); font-weight: 500; }
+.progress-step.done { color: var(--success); }
 .result-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 16px; display: none; }
 .result-header { background: var(--accent); color: white; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
 .result-header span { font-size: 13px; font-weight: 700; }
@@ -53,6 +55,11 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
 .char-count { font-size: 11px; color: var(--text-hint); margin-top: 6px; text-align: right; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { font-size: 12px; padding: 4px 12px; border-radius: 99px; background: var(--accent-light); color: var(--accent-dark); border: 1px solid rgba(83,74,183,0.3); font-weight: 500; }
+.source-list { display: flex; flex-direction: column; gap: 8px; }
+.source-item { font-size: 13px; padding: 8px 12px; background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.source-item .source-num { font-weight: 700; color: var(--accent); margin-right: 6px; }
+.source-item a { color: var(--accent); text-decoration: none; font-size: 12px; display: block; margin-top: 2px; word-break: break-all; }
+.source-item a:hover { text-decoration: underline; }
 .status { font-size: 12px; color: var(--text-sub); text-align: center; margin-top: 8px; min-height: 18px; }
 .status.error { color: #A32D2D; }
 .status.success { color: var(--success); }
@@ -63,17 +70,9 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
 <body>
 <header>
   <h1>📝 note記事 自動生成</h1>
-  <p>舞台スタッフの学校 ｜ リサーチから記事まで自動作成</p>
+  <p>舞台スタッフの学校 ｜ Web検索→記事生成まで自動</p>
 </header>
 <div class="container">
-
-  <div class="section">
-    <div class="section-label">APIキー</div>
-    <div class="card">
-      <input class="api-input" type="password" id="apiKey" placeholder="sk-ant-..." />
-      <p class="api-hint">キーはこの端末にのみ保存されます。<a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a> で取得</p>
-    </div>
-  </div>
 
   <div class="section">
     <div class="section-label">トピック（複数選択OK）</div>
@@ -126,7 +125,8 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
   <div class="status" id="status"></div>
 
   <div class="progress-card" id="progressCard">
-    <div style="font-size:13px;color:var(--accent);">⏳ 記事を生成中です。少々お待ちください...</div>
+    <div class="progress-step" id="step1"><span>🔍</span> Web検索中...</div>
+    <div class="progress-step" id="step2"><span>○</span> 記事を生成中...</div>
   </div>
 
   <div class="result-card" id="resultCard">
@@ -134,11 +134,31 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
       <span>生成結果</span>
       <button class="copy-all-btn" onclick="copyAll()">全文コピー</button>
     </div>
-    <div class="out-sec"><div class="out-label">タイトル<button class="copy-sec" onclick="copySec('outTitle')">コピー</button></div><div class="out-text" id="outTitle"></div></div>
-    <div class="out-sec"><div class="out-label">リード文<button class="copy-sec" onclick="copySec('outLead')">コピー</button></div><div class="out-text" id="outLead"></div></div>
-    <div class="out-sec"><div class="out-label">本文<button class="copy-sec" onclick="copySec('outBody')">コピー</button></div><div class="out-text" id="outBody"></div><div class="char-count" id="charCount"></div></div>
-    <div class="out-sec"><div class="out-label">まとめ・締め<button class="copy-sec" onclick="copySec('outSummary')">コピー</button></div><div class="out-text" id="outSummary"></div></div>
-    <div class="out-sec"><div class="out-label">ハッシュタグ</div><div class="tag-list" id="outTags"></div></div>
+    <div class="out-sec">
+      <div class="out-label">タイトル<button class="copy-sec" onclick="copySec('outTitle')">コピー</button></div>
+      <div class="out-text" id="outTitle"></div>
+    </div>
+    <div class="out-sec">
+      <div class="out-label">リード文<button class="copy-sec" onclick="copySec('outLead')">コピー</button></div>
+      <div class="out-text" id="outLead"></div>
+    </div>
+    <div class="out-sec">
+      <div class="out-label">本文<button class="copy-sec" onclick="copySec('outBody')">コピー</button></div>
+      <div class="out-text" id="outBody"></div>
+      <div class="char-count" id="charCount"></div>
+    </div>
+    <div class="out-sec">
+      <div class="out-label">まとめ・締め<button class="copy-sec" onclick="copySec('outSummary')">コピー</button></div>
+      <div class="out-text" id="outSummary"></div>
+    </div>
+    <div class="out-sec">
+      <div class="out-label">参照元URL</div>
+      <div class="source-list" id="outSources"></div>
+    </div>
+    <div class="out-sec">
+      <div class="out-label">ハッシュタグ</div>
+      <div class="tag-list" id="outTags"></div>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -146,13 +166,11 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
 <script>
 var lastResult = null;
 
-window.onload = function() {
-  var saved = localStorage.getItem('anthropic_api_key');
-  if (saved) document.getElementById('apiKey').value = saved;
-};
-
 function toggleTopic(btn) { btn.classList.toggle('active'); }
-function selectTone(btn) { document.querySelectorAll('.pill[data-tone]').forEach(function(b){ b.classList.remove('active'); }); btn.classList.add('active'); }
+function selectTone(btn) {
+  document.querySelectorAll('.pill[data-tone]').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+}
 function selectPeriod(btn) {
   document.querySelectorAll('.pill[data-days]').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
@@ -165,79 +183,98 @@ function addKw() {
   list.appendChild(row);
 }
 function removeKw(btn) { var l = document.getElementById('kwList'); if (l.children.length > 1) btn.parentElement.remove(); }
+
 function showToast(msg) {
   var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   setTimeout(function(){ t.classList.remove('show'); }, 2000);
 }
-function copySec(id) { navigator.clipboard.writeText(document.getElementById(id).textContent).then(function(){ showToast('コピーしました！'); }); }
+function copySec(id) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(function(){ showToast('コピーしました！'); });
+}
 function copyAll() {
   if (!lastResult) return;
-  var text = '【タイトル】\n' + lastResult.title + '\n\n【リード文】\n' + lastResult.lead + '\n\n【本文】\n' + lastResult.body + '\n\n【まとめ】\n' + lastResult.summary + '\n\n【ハッシュタグ】\n' + (lastResult.tags||[]).map(function(t){ return '#'+t; }).join(' ');
+  var sources = (lastResult.sources||[]).map(function(s){ return '['+s.index+'] '+s.title+'\n'+s.url; }).join('\n');
+  var text = '【タイトル】\n'+lastResult.title+'\n\n【リード文】\n'+lastResult.lead+'\n\n【本文】\n'+lastResult.body+'\n\n【まとめ】\n'+lastResult.summary+'\n\n【参照元】\n'+sources+'\n\n【ハッシュタグ】\n'+(lastResult.tags||[]).map(function(t){ return '#'+t; }).join(' ');
   navigator.clipboard.writeText(text).then(function(){ showToast('全文コピーしました！'); });
 }
+
+function setStep(n) {
+  var steps = ['step1','step2'];
+  var icons = ['🔍','✍️'];
+  steps.forEach(function(id, i) {
+    var el = document.getElementById(id);
+    el.className = 'progress-step' + (i < n ? ' done' : i === n ? ' active' : '');
+    el.querySelector('span').textContent = i < n ? '✓' : icons[i];
+  });
+}
+
 function renderResult(data) {
   lastResult = data;
   document.getElementById('outTitle').textContent = data.title || '';
   document.getElementById('outLead').textContent = data.lead || '';
   document.getElementById('outBody').textContent = data.body || '';
   document.getElementById('outSummary').textContent = data.summary || '';
-  document.getElementById('charCount').textContent = '本文 ' + (data.body||'').length.toLocaleString() + ' 文字';
+  document.getElementById('charCount').textContent = '本文 '+(data.body||'').length.toLocaleString()+' 文字';
+
+  var srcEl = document.getElementById('outSources'); srcEl.innerHTML = '';
+  (data.sources||[]).forEach(function(s) {
+    var div = document.createElement('div'); div.className = 'source-item';
+    div.innerHTML = '<span class="source-num">['+s.index+']</span>'+s.title+'<a href="'+s.url+'" target="_blank" rel="noopener">'+s.url+'</a>';
+    srcEl.appendChild(div);
+  });
+
   var tagEl = document.getElementById('outTags'); tagEl.innerHTML = '';
   (data.tags||[]).forEach(function(tag){ var s = document.createElement('span'); s.className = 'tag'; s.textContent = '#'+tag; tagEl.appendChild(s); });
+
   document.getElementById('resultCard').style.display = 'block';
   setTimeout(function(){ document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
 }
 
 async function generate() {
-  var apiKey = document.getElementById('apiKey').value.trim();
-  if (!apiKey) { document.getElementById('status').textContent = 'APIキーを入力してください'; document.getElementById('status').className = 'status error'; return; }
-  localStorage.setItem('anthropic_api_key', apiKey);
-
-  var topics = Array.from(document.querySelectorAll('.topic-btn.active')).map(function(b){ return b.textContent.trim().replace(/^[^\s]+\s/,''); });
+  var topics = Array.from(document.querySelectorAll('.topic-btn.active')).map(function(b){
+    return b.textContent.trim().replace(/^.\s/,'');
+  });
   if (!topics.length) { document.getElementById('status').textContent = 'トピックを選択してください'; document.getElementById('status').className = 'status error'; return; }
 
   var periodBtn = document.querySelector('.pill[data-days].active');
   var period = '直近7日間';
   if (periodBtn.dataset.days === '0') {
-    var f = document.getElementById('dateFrom').value, t = document.getElementById('dateTo').value;
-    period = (f && t) ? f+'〜'+t : '直近7日間';
+    var f = document.getElementById('dateFrom').value, t2 = document.getElementById('dateTo').value;
+    period = (f && t2) ? f+'〜'+t2 : '直近7日間';
   } else { period = '直近'+periodBtn.dataset.days+'日間'; }
 
   var tone = (document.querySelector('.pill[data-tone].active')||{}).dataset.tone || 'professional';
-  var toneMap = { professional: 'プロ向け・専門的・現場経験者として語る口調', friendly: '親しみやすくフランクな口調', student: '初心者・専門学校生向けに丁寧でわかりやすい口調' };
   var keywords = Array.from(document.querySelectorAll('.kw-row input')).map(function(i){ return i.value.trim(); }).filter(Boolean);
-  var kwText = keywords.length ? '追加キーワード: '+keywords.join('、') : '';
 
   var btn = document.getElementById('genBtn');
   btn.disabled = true;
   document.getElementById('status').textContent = '';
   document.getElementById('status').className = 'status';
   document.getElementById('resultCard').style.display = 'none';
-  document.getElementById('progressCard').style.display = '';
-
-  var prompt = 'あなたは舞台スタッフ向けnoteマガジン「舞台スタッフの学校」の編集者です。\n\n以下の条件でnote記事を作成してください。\n\n【トピック】'+topics.join('、')+'\n【期間】'+period+'\n【文体】'+toneMap[tone]+'\n【対象読者】現役舞台スタッフ・照明・音響・舞台機構・進行・大道具のプロおよび専門学校生\n'+kwText+'\n\n本文は1,200〜1,800字、各トピックを見出し付きで解説し、現場目線のコメントを必ず含めてください。\n\n必ずJSON形式のみで返してください。マークダウン不要です。\n{"title":"タイトル","lead":"リード文","body":"本文","summary":"まとめ","tags":["タグ1","タグ2"]}';
+  document.getElementById('progressCard').style.display = 'block';
+  setStep(0);
 
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    var response = await fetch('/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 4000, messages: [{ role: 'user', content: prompt }] })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topics: topics, period: period, tone: tone, keywords: keywords })
     });
+    setStep(1);
+    if (!response.ok) {
+      var err = await response.json();
+      throw new Error(err.error || 'サーバーエラー');
+    }
     var data = await response.json();
-    if (!response.ok) throw new Error(JSON.stringify(data.error || data));
-    var textBlock = (data.content||[]).find(function(b){ return b.type==='text'; });
-    if (!textBlock) throw new Error('生成に失敗しました');
-    var clean = textBlock.text.replace(/```json|```/g,'').trim();
-    var match = clean.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('JSON解析失敗');
-    renderResult(JSON.parse(match[0]));
+    document.getElementById('progressCard').style.display = 'none';
+    renderResult(data);
     document.getElementById('status').textContent = '生成完了！';
     document.getElementById('status').className = 'status success';
   } catch(e) {
+    document.getElementById('progressCard').style.display = 'none';
     document.getElementById('status').textContent = 'エラー: ' + e.message;
     document.getElementById('status').className = 'status error';
   }
-  document.getElementById('progressCard').style.display = 'none';
   btn.disabled = false;
 }
 </script>

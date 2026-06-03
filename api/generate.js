@@ -1,23 +1,24 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { topics, period, tone, keywords } = req.body;
-
-  if (!topics || !topics.length) {
-    return res.status(400).json({ error: 'トピックを選択してください' });
-  }
+  if (!topics || !topics.length) return res.status(400).json({ error: 'トピックを選択してください' });
 
   const kwText = keywords && keywords.length ? `追加キーワード: ${keywords.join('、')}` : '';
-
   const toneMap = {
     professional: 'プロ向け・専門的・現場経験者として語る口調',
     friendly: '親しみやすくフランクな口調',
     student: '初心者・専門学校生向けに丁寧でわかりやすい口調'
   };
 
-  const prompt = `以下の条件でnote記事を作成してください。ウェブ検索で最新情報を収集してから記事を生成してください。
+  const prompt = `あなたは舞台スタッフ向けnoteマガジン「舞台スタッフの学校」の編集者です。
+
+以下の条件でnote記事を作成してください。
 
 【トピック】${topics.join('、')}
 【期間】${period}
@@ -32,15 +33,9 @@ ${kwText}
 - まとめ・締め
 - ハッシュタグ（note用・5〜8個）
 
-必ずJSON形式のみで返してください。前置きや説明は不要です。
+必ずJSON形式のみで返してください。前置きや説明は不要です。マークダウンのコードブロックも不要です。
 
-{
-  "title": "...",
-  "lead": "...",
-  "body": "...",
-  "summary": "...",
-  "tags": ["舞台スタッフ", "照明", ...]
-}`;
+{"title":"...","lead":"...","body":"...","summary":"...","tags":["舞台スタッフ","照明"]}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -53,7 +48,6 @@ ${kwText}
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -61,19 +55,15 @@ ${kwText}
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(500).json({ error: 'API error', detail: data });
+      return res.status(500).json({ error: 'API error', detail: JSON.stringify(data) });
     }
 
     const textBlock = (data.content || []).find(b => b.type === 'text');
-    if (!textBlock) {
-      return res.status(500).json({ error: '生成に失敗しました' });
-    }
+    if (!textBlock) return res.status(500).json({ error: '生成に失敗しました' });
 
     const clean = textBlock.text.replace(/```json|```/g, '').trim();
     const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return res.status(500).json({ error: 'JSON解析に失敗しました' });
-    }
+    if (!jsonMatch) return res.status(500).json({ error: 'JSON解析失敗', raw: clean.slice(0, 200) });
 
     const parsed = JSON.parse(jsonMatch[0]);
     return res.status(200).json(parsed);

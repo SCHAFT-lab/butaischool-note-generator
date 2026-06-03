@@ -9,9 +9,7 @@ module.exports = async function handler(req, res) {
   if (!topics || !topics.length) return res.status(400).json({ error: 'トピックを選択してください' });
 
   const toneMap = {
-    professional: 'プロ向け・専門的・現場経験者として語る口調',
-    friendly: '親しみやすくフランクな口調',
-    student: '初心者・専門学校生向けに丁寧でわかりやすい口調'
+    student: '経験3年未満の若手スタッフ・専門学校生・大学生向けに、専門用語にはかんたんな説明を添えて、丁寧でわかりやすい口調'
   };
 
   // Step1: Tavilyで検索

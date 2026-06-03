@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const { topics, period, tone, keywords } = req.body;
   if (!topics || !topics.length) return res.status(400).json({ error: 'トピックを選択してください' });
 
-  const kwText = keywords && keywords.length ? `追加キーワード: ${keywords.join('、')}` : '';
+  const kwText = keywords && keywords.length ? '追加キーワード: ' + keywords.join('、') : '';
   const toneMap = {
     professional: 'プロ向け・専門的・現場経験者として語る口調',
     friendly: '親しみやすくフランクな口調',
@@ -26,16 +26,11 @@ export default async function handler(req, res) {
 【対象読者】現役舞台スタッフ・照明・音響・舞台機構・進行・大道具のプロおよび専門学校生
 ${kwText}
 
-【記事の構成】
-- タイトル（クリックしたくなる具体的なタイトル）
-- リード文（3〜4文）
-- 本文（各トピックを見出し付きで1,200〜1,800字、現場目線のコメント必須）
-- まとめ・締め
-- ハッシュタグ（note用・5〜8個）
+本文は1,200〜1,800字、各トピックを見出し付きで解説し、現場目線のコメントを必ず含めてください。
 
-必ずJSON形式のみで返してください。前置きや説明は不要です。マークダウンのコードブロックも不要です。
+必ずJSON形式のみで返してください。マークダウンのコードブロック不要です。
 
-{"title":"...","lead":"...","body":"...","summary":"...","tags":["舞台スタッフ","照明"]}`;
+{"title":"タイトル","lead":"リード文","body":"本文","summary":"まとめ","tags":["タグ1","タグ2"]}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -58,7 +53,7 @@ ${kwText}
       return res.status(500).json({ error: 'API error', detail: JSON.stringify(data) });
     }
 
-    const textBlock = (data.content || []).find(b => b.type === 'text');
+    const textBlock = (data.content || []).find(function(b) { return b.type === 'text'; });
     if (!textBlock) return res.status(500).json({ error: '生成に失敗しました' });
 
     const clean = textBlock.text.replace(/```json|```/g, '').trim();
@@ -71,4 +66,4 @@ ${kwText}
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};

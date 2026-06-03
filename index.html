@@ -184,8 +184,8 @@ function renderResult(data) {
   document.getElementById('charCount').textContent = '本文 ' + (data.body||'').length.toLocaleString() + ' 文字';
   var tagEl = document.getElementById('outTags'); tagEl.innerHTML = '';
   (data.tags||[]).forEach(function(tag){ var s = document.createElement('span'); s.className = 'tag'; s.textContent = '#'+tag; tagEl.appendChild(s); });
-  document.getElementById('resultCard').style.display = '';
-  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('resultCard').style.display = 'block';
+  setTimeout(function(){ document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
 }
 
 async function generate() {

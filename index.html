@@ -112,15 +112,6 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-label">文体・トーン</div>
-    <div class="pill-row">
-      <button class="pill active" data-tone="professional" onclick="selectTone(this)">プロ向け・専門的</button>
-      <button class="pill" data-tone="friendly" onclick="selectTone(this)">親しみやすく</button>
-      <button class="pill" data-tone="student" onclick="selectTone(this)">初心者・学生向け</button>
-    </div>
-  </div>
-
   <button class="generate-btn" id="genBtn" onclick="generate()">🔍 リサーチして記事を生成</button>
   <div class="status" id="status"></div>
 
@@ -167,10 +158,6 @@ header p { font-size: 11px; opacity: 0.75; margin-top: 2px; }
 var lastResult = null;
 
 function toggleTopic(btn) { btn.classList.toggle('active'); }
-function selectTone(btn) {
-  document.querySelectorAll('.pill[data-tone]').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-}
 function selectPeriod(btn) {
   document.querySelectorAll('.pill[data-days]').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
@@ -243,7 +230,7 @@ async function generate() {
     period = (f && t2) ? f+'〜'+t2 : '直近7日間';
   } else { period = '直近'+periodBtn.dataset.days+'日間'; }
 
-  var tone = (document.querySelector('.pill[data-tone].active')||{}).dataset.tone || 'professional';
+  var tone = 'student';
   var keywords = Array.from(document.querySelectorAll('.kw-row input')).map(function(i){ return i.value.trim(); }).filter(Boolean);
 
   var btn = document.getElementById('genBtn');

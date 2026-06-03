@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>note記事生成 | 舞台スタッフの学校</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #534AB7;
+    --accent-light: #EEEDFE;
+    --accent-dark: #3C3489;
+    --accent-border: #AFA9EC;
+    --bg: #f8f7fc;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-sub: #6b6b8a;
+    --text-hint: #a0a0bb;
+    --border: rgba(83,74,183,0.15);
+    --border-mid: rgba(83,74,183,0.3);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --success: #0F6E56;
+    --success-bg: #E1F5EE;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 16px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  header p {
+    font-size: 11px;
+    opacity: 0.75;
+    margin-top: 2px;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  .section {
+    margin-bottom: 20px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-sub);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .topic-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .topic-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--text-sub);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    line-height: 1.3;
+  }
+
+  .topic-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-weight: 500;
+  }
+
+  .topic-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .pill-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    font-size: 13px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-mid);
+    border-radius: 99px;
+    background: var(--card);
+    color: var(--text-sub);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .pill.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-weight: 500;
+  }
+
+  .date-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .date-row input[type=date] {
+    flex: 1;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 8px 10px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    color: var(--text);
+  }
+
+  .date-row span {
+    font-size: 13px;
+    color: var(--text-sub);
+    flex-shrink: 0;
+  }
+
+  .kw-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .kw-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .kw-row input {
+    flex: 1;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 9px 12px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .kw-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .kw-del {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .add-btn {
+    font-size: 13px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+    font-weight: 500;
+  }
+
+  .generate-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: white;
+    border: none;
+    letter-spacing: 0.05em;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .generate-btn:active { transform: scale(0.98); }
+  .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .progress-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: none;
+    margin-top: 16px;
+  }
+
+  .progress-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: var(--text-hint);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .progress-step:last-child { border-bottom: none; }
+  .progress-step.done { color: var(--success); }
+  .progress-step.active { color: var(--accent); font-weight: 500; }
+
+  .step-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .result-header {
+    background: var(--accent);
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-header span {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .copy-all-btn {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.4);
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+  }
+
+  .result-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-section:last-child { border-bottom: none; }
+
+  .result-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-hint);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .copy-sec-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid var(--border-mid);
+    background: transparent;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .result-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 99px;
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    border: 1px solid var(--accent-border);
+    font-weight: 500;
+  }
+
+  .status {
+    font-size: 12px;
+    color: var(--text-sub);
+    text-align: center;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+
+  .status.error { color: #A32D2D; }
+  .status.success { color: var(--success); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--text);
+    color: white;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 99px;
+    transition: transform 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 400px) {
+    .topic-grid { grid-template-columns: 1fr; }
+    .topic-btn { font-size: 14px; padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📝 note記事 自動生成</h1>
+  <p>舞台スタッフの学校 ｜ リサーチから記事まで自動作成</p>
+</header>
+
+<div class="container">
+
+  <div class="section">
+    <div class="section-label">トピック（複数選択OK）</div>
+    <div class="topic-grid">
+      <button class="topic-btn active" onclick="toggleTopic(this)">
+        <span class="topic-icon">🔧</span>最新機材・テクノロジー
+      </button>
+      <button class="topic-btn active" onclick="toggleTopic(this)">
+        <span class="topic-icon">📅</span>展示会・セミナー
+      </button>
+      <button class="topic-btn active" onclick="toggleTopic(this)">
+        <span class="topic-icon">🎭</span>注目舞台の裏側
+      </button>
+      <button class="topic-btn active" onclick="toggleTopic(this)">
+        <span class="topic-icon">💼</span>求人・キャリア
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">期間</div>
+    <div class="card">
+      <div class="pill-row">
+        <button class="pill active" data-days="7" onclick="selectPeriod(this)">直近7日</button>
+        <button class="pill" data-days="14" onclick="selectPeriod(this)">直近14日</button>
+        <button class="pill" data-days="30" onclick="selectPeriod(this)">直近30日</button>
+        <button class="pill" data-days="0" onclick="selectPeriod(this)">期間指定</button>
+      </div>
+      <div class="date-row" id="dateRow" style="display:none;">
+        <input type="date" id="dateFrom">
+        <span>〜</span>
+        <input type="date" id="dateTo">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">追加キーワード（任意）</div>
+    <div class="card">
+      <div class="kw-list" id="kwList">
+        <div class="kw-row">
+          <input type="text" placeholder="例: QLab、Inter BEE、フルハーネス">
+          <button class="kw-del" onclick="removeKw(this)">✕</button>
+        </div>
+      </div>
+      <button class="add-btn" onclick="addKw()">＋ キーワードを追加</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">文体・トーン</div>
+    <div class="pill-row">
+      <button class="pill active" data-tone="professional" onclick="selectTone(this)">プロ向け・専門的</button>
+      <button class="pill" data-tone="friendly" onclick="selectTone(this)">親しみやすく</button>
+      <button class="pill" data-tone="student" onclick="selectTone(this)">初心者・学生向け</button>
+    </div>
+  </div>
+
+  <button class="generate-btn" id="genBtn" onclick="generate()">
+    🔍 リサーチして記事を生成
+  </button>
+  <div class="status" id="status"></div>
+
+  <div class="progress-card" id="progressCard">
+    <div class="progress-step" id="step1">
+      <span class="step-icon">⏳</span>最新情報をリサーチ中...
+    </div>
+    <div class="progress-step" id="step2">
+      <span class="step-icon">○</span>記事を生成中...
+    </div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <span>生成結果</span>
+      <button class="copy-all-btn" onclick="copyAll()">全文コピー</button>
+    </div>
+    <div class="result-section">
+      <div class="result-label">
+        タイトル
+        <button class="copy-sec-btn" onclick="copySec('outTitle')">コピー</button>
+      </div>
+      <div class="result-text" id="outTitle"></div>
+    </div>
+    <div class="result-section">
+      <div class="result-label">
+        リード文
+        <button class="copy-sec-btn" onclick="copySec('outLead')">コピー</button>
+      </div>
+      <div class="result-text" id="outLead"></div>
+    </div>
+    <div class="result-section">
+      <div class="result-label">
+        本文
+        <button class="copy-sec-btn" onclick="copySec('outBody')">コピー</button>
+      </div>
+      <div class="result-text" id="outBody"></div>
+      <div class="char-count" id="charCount"></div>
+    </div>
+    <div class="result-section">
+      <div class="result-label">
+        まとめ・締め
+        <button class="copy-sec-btn" onclick="copySec('outSummary')">コピー</button>
+      </div>
+      <div class="result-text" id="outSummary"></div>
+    </div>
+    <div class="result-section">
+      <div class="result-label">ハッシュタグ</div>
+      <div class="tag-list" id="outTags"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">コピーしました！</div>
+
+<script>
+let lastResult = null;
+
+function toggleTopic(btn) { btn.classList.toggle('active'); }
+function selectTone(btn) {
+  document.querySelectorAll('.pill[data-tone]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function selectPeriod(btn) {
+  document.querySelectorAll('.pill[data-days]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('dateRow').style.display = btn.dataset.days === '0' ? 'flex' : 'none';
+}
+function addKw() {
+  const list = document.getElementById('kwList');
+  const row = document.createElement('div'); row.className = 'kw-row';
+  row.innerHTML = '<input type="text" placeholder="例: QLab、Inter BEE、フルハーネス"><button class="kw-del" onclick="removeKw(this)">✕</button>';
+  list.appendChild(row);
+}
+function removeKw(btn) {
+  const l = document.getElementById('kwList');
+  if (l.children.length > 1) btn.parentElement.remove();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function copySec(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('コピーしました！'));
+}
+
+function copyAll() {
+  if (!lastResult) return;
+  const text = [
+    '【タイトル】\n' + lastResult.title,
+    '\n【リード文】\n' + lastResult.lead,
+    '\n【本文】\n' + lastResult.body,
+    '\n【まとめ】\n' + lastResult.summary,
+    '\n【ハッシュタグ】\n' + (lastResult.tags || []).map(t => '#' + t).join(' ')
+  ].join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('全文コピーしました！'));
+}
+
+function setStep(n) {
+  const steps = [
+    { id: 'step1', icon: ['⏳', '✓', '○'], label: '最新情報をリサーチ中...' },
+    { id: 'step2', icon: ['○', '⏳', '✓'], label: '記事を生成中...' }
+  ];
+  steps.forEach((s, i) => {
+    const el = document.getElementById(s.id);
+    el.className = 'progress-step' + (i < n ? ' done' : i === n ? ' active' : '');
+    el.querySelector('.step-icon').textContent = i < n ? '✓' : i === n ? '⏳' : '○';
+  });
+}
+
+function renderResult(data) {
+  lastResult = data;
+  document.getElementById('outTitle').textContent = data.title || '';
+  document.getElementById('outLead').textContent = data.lead || '';
+  document.getElementById('outBody').textContent = data.body || '';
+  document.getElementById('outSummary').textContent = data.summary || '';
+  document.getElementById('charCount').textContent = `本文 ${(data.body || '').length.toLocaleString()} 文字`;
+  const tagEl = document.getElementById('outTags'); tagEl.innerHTML = '';
+  (data.tags || []).forEach(tag => {
+    const s = document.createElement('span'); s.className = 'tag';
+    s.textContent = '#' + tag; tagEl.appendChild(s);
+  });
+  document.getElementById('resultCard').style.display = '';
+  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function generate() {
+  const topics = [...document.querySelectorAll('.topic-btn.active')].map(b => {
+    const c = b.cloneNode(true); c.querySelector('.topic-icon').remove();
+    return c.textContent.trim();
+  });
+  if (!topics.length) {
+    document.getElementById('status').textContent = 'トピックを1つ以上選択してください';
+    document.getElementById('status').className = 'status error';
+    return;
+  }
+
+  const periodBtn = document.querySelector('.pill[data-days].active');
+  let period = '直近7日間';
+  if (periodBtn.dataset.days === '0') {
+    const f = document.getElementById('dateFrom').value;
+    const t = document.getElementById('dateTo').value;
+    period = (f && t) ? `${f}〜${t}` : '直近7日間';
+  } else {
+    period = `直近${periodBtn.dataset.days}日間`;
+  }
+
+  const tone = document.querySelector('.pill[data-tone].active')?.dataset.tone || 'professional';
+  const keywords = [...document.querySelectorAll('.kw-row input')].map(i => i.value.trim()).filter(Boolean);
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('status').textContent = '';
+  document.getElementById('status').className = 'status';
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('progressCard').style.display = '';
+  setStep(0);
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topics, period, tone, keywords })
+    });
+
+    setStep(1);
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'サーバーエラー');
+    }
+
+    const data = await res.json();
+    document.getElementById('progressCard').style.display = 'none';
+    renderResult(data);
+    document.getElementById('status').textContent = '生成完了！';
+    document.getElementById('status').className = 'status success';
+
+  } catch (e) {
+    document.getElementById('progressCard').style.display = 'none';
+    document.getElementById('status').textContent = 'エラー: ' + e.message;
+    document.getElementById('status').className = 'status error';
+  }
+
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
